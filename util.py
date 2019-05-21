@@ -35,6 +35,7 @@ import os
 import re
 import json
 import paramiko
+from pyquery import PyQuery
 
 """
 获取用户请求日志，格式为：
@@ -106,7 +107,6 @@ def getUserSend(ssh, arg=[]):
     userSend = []
     ip = ''
     uid = ''
-    print(arg, 'gg')
     log = getUserLog(ssh, arg)
     if (log != ''):
         lines = log.split("\n")
@@ -194,78 +194,62 @@ def getBestTemplate(userSend, templates):
     return bestid, best
 
 
-def show_diff(text, n_text):
-    """
-    http://stackoverflow.com/a/788780
-    Unify operations between two compared strings seqm is a difflib.
-    SequenceMatcher instance whose a & b are strings
-    """
-    seqm = difflib.SequenceMatcher(None, text, n_text)
-    output = []
-    red = "\033[31m"
-    green = "\033[32m"
-    yellow = "\033[33m"
-
-    tail = "\033[0m"
-    for opcode, a0, a1, b0, b1 in seqm.get_opcodes():
-        if opcode == 'equal':
-            output.append(seqm.a[a0:a1])
-        elif opcode == 'insert':
-            output.append(green + seqm.b[b0:b1] + tail)
-        elif opcode == 'delete':
-            output.append(yellow + seqm.a[a0:a1] + tail)
-        elif opcode == 'replace':
-            # seqm.a[a0:a1] -> seqm.b[b0:b1]
-            output.append(red + seqm.b[b0:b1] + tail)
-        else:
-            pass
-    return ''.join(output)
-
-
 def show_diff_html(tpls, text):
     d = difflib.HtmlDiff()  # 创建HtmlDiffer()对象
     html = d.make_file(tpls, text) # 采用make_file方法对字符串进行比较
-    with open('./res.html', 'w') as f:
-        f.write(html)
+    pq = PyQuery(html)
+    tr = str(pq('tbody tr'))
+    print('tr', tr)
+    index = tr.find('<td class="diff_next">')
+    first_tpl = str(tr)[4:index]
+    print('first', first_tpl)
+    first_tpl = first_tpl.replace(re.findall(r'(<a href="#difflib_chg_to.*__top">t</a>)', first_tpl, re.S)[0], '<span>模版内容</span>')
+    second_msg = str(tr)[index:-5]
+    second_msg = second_msg.replace(re.findall(r'(<a href="#difflib_chg_to.*__top">t</a>)', second_msg, re.S)[0], '<span>短信内容</span>')
+    return first_tpl, second_msg
+
 
 
 def ssh_logger():
-    private_key_path = './id_rsa'
+    private_key_path = '/Users/gujinxin/.ssh/id_rsa'
     key = paramiko.RSAKey.from_private_key_file(private_key_path)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect('121.43.182.116', 22, 'logger', key)
-    stdin, stdout, stderr = ssh.exec_command('df')
-    print(stdout.read())
     return ssh
 
 
-def run():
+def run(uid_mobile):
     s = ssh_logger()
-    if len(sys.argv) <= 1:
-        print("Usage: \npython autocheck.py 1358888****")
-        exit(0)
-    arg = sys.argv[1:]
-    print(arg, 'haha')
-    ip, uid, userSend = getUserSend(s, arg)
+    r = []
+    ip, uid, userSend = getUserSend(s, [uid_mobile])
 
     if (ip != '' and uid != ''):
         templates = getTemplates(s, ip, uid)
-        print("ip=%s, uid=%s, count=%d\n" % (ip, uid, len(userSend)))
-
         for time, uid, txt, mobile in userSend:
             id, tpl = getBestTemplate(txt, templates)
-            print("time: %s, uid=%s, tplid=%s, mobile=%s" % (time, uid, id, mobile))
-            print("tpl =" + tpl)
-            print("txt =" + txt)
-            print("diff=" + show_diff(tpl, txt))
-            print("")
-            show_diff_html(tpl.split(','), txt.split(','))
+            print(tpl, txt)
+            try:
+                first_tpl, second_msg = show_diff_html(tpl.splitlines(), txt.splitlines())
+            except:
+                pass
+            else:
+                r.append(
+                    {
+                        'time': time,
+                        'uid': uid,
+                        'mobile': mobile,
+                        'tpl_id': id,
+                        'tpl_html': first_tpl,
+                        'msg_html': second_msg
+                    }
+                )
     else:
         print("ip=%s, uid=%s, count=%d" % (ip, uid, len(userSend)))
     s.close()
+    return r
 
 
 if __name__ == '__main__':
-    run()
+    run('15705834033')

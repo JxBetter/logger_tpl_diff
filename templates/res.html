@@ -1,0 +1,68 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+
+<head>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8" />
+    <title></title>
+    <style type="text/css">
+        table.diff {font-family:Courier; border:medium;}
+        .diff_header {background-color:#e0e0e0}
+        td.diff_header {text-align:right}
+        .diff_next {background-color:#c0c0c0}
+        .diff_add {background-color:#aaffaa}
+        .diff_chg {background-color:#ffff77}
+        .diff_sub {background-color:#ffaaaa}
+        div:hover {background-color: silver}
+    </style>
+</head>
+
+<body>
+
+    <table class="diff" summary="Legends">
+            <tr> <th colspan="2"> 说明 </th> </tr>
+            <tr> <td> <table border="" summary="Colors">
+                          <tr><th> 颜色 </th> </tr>
+                          <tr><td class="diff_add">&nbsp;增加&nbsp;</td></tr>
+                          <tr><td class="diff_chg">&nbsp;替换&nbsp;</td> </tr>
+                          <tr><td class="diff_sub">&nbsp;删除&nbsp;</td> </tr>
+                      </table></td>
+                 <td> <table border="" summary="Links">
+                          <tr><th colspan="2"> 说明 </th> </tr>
+                          <tr><td>短信中增加的内容</td> </tr>
+                          <tr><td>替换的内容</td> </tr>
+                          <tr><td>模版中删除的内容</td> </tr>
+                      </table></td> </tr>
+    </table><hr>
+
+    {% for d in data %}
+    <div>
+    <table class="diff" cellspacing="0" cellpadding="0" rules="groups" >
+        发送时间: {{d.time}},  手机号: {{d.mobile}},  模版id: {{d.tpl_id}},  子账号: {{d.uid}}
+        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
+        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
+
+        <tbody>
+            <tr>
+                {{d.tpl_html|safe}}
+            </tr>
+        </tbody>
+        <tbody>
+            <tr>
+                {{d.msg_html|safe}}
+            </tr>
+        </tbody>
+    </table><br><br>
+    </div>
+    {% endfor %}
+
+    <form action="/" method="get">
+        <button type="submit" style="font-size: 16px">返回</button>
+    </form>
+
+</body>
+
+</html>
