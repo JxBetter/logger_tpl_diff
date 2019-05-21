@@ -58,7 +58,7 @@ from pyquery import PyQuery
 """
 
 
-def getUserLog(ssh, arg=[]):
+def getUserLog(ssh, arg):
     sub1 = arg[0]
     sub2 = ''
 
@@ -103,7 +103,7 @@ def getUserTplCache(ssh, ip='', uid=''):
 
 
 # 提取用户发出的请求
-def getUserSend(ssh, arg=[]):
+def getUserSend(ssh, arg):
     userSend = []
     ip = ''
     uid = ''
@@ -123,8 +123,9 @@ def getUserSend(ssh, arg=[]):
                     time = str(table[0])
                     uid = str(table[3])
                     detail = str(table[12])
-                    if re.findall(r'code:(.*?),', detail, re.S)[0] == '5':
-                        userSend.append((time, uid, re.findall(r'text=\[(.*?)\]}', detail, re.S)[0],
+                    print(re.findall(r'code:(.*?),', detail, re.S))
+                    if '5' in re.findall(r'code:(.*?),', detail, re.S):
+                        userSend.append((time, uid, re.findall(r'text=\[(.*?)\]', detail, re.S)[0],
                                          re.findall(r'mobile=\[(.*?)\]', detail, re.S)[0]))
                 elif (line.find("/single_send.json") > -1):
 
@@ -132,15 +133,27 @@ def getUserSend(ssh, arg=[]):
                     time = str(table[0])
                     uid = str(table[3])
                     detail = str(table[12])
-                    if re.findall(r'code:(.*?),', detail, re.S)[0] == '5':
-                        userSend.append((time, uid, re.findall(r'text=\[(.*?)\]}', detail, re.S)[0],
+                    print(re.findall(r'code.*?:(.*?),', detail, re.S))
+                    if '5' in re.findall(r'code.*?:(.*?),', detail, re.S):
+                        userSend.append((time, uid, re.findall(r'text=\[(.*?)\]', detail, re.S)[0],
                                          re.findall(r'mobile=\[(.*?)\]', detail, re.S)[0]))
                 elif (line.find("/batch_send.json") > -1):
                     table = line.split("\t")
                     time = str(table[0])
                     uid = str(table[3])
                     detail = str(table[12])
-                    if re.findall(r'code:(.*?),', detail, re.S)[0] == '5':
+                    print(re.findall(r'code.*?:(.*?),', detail, re.S))
+                    if '5' in re.findall(r'code.*?:(.*?),', detail, re.S):
+                        userSend.append((time, uid, re.findall(r'text=\[(.*?)\]', detail, re.S)[0],
+                                         re.findall(r'mobile=\[(.*?)\]', detail, re.S)[0]))
+
+                elif (line.find("/v2/sms/multi_send.json") > -1):
+                    table = line.split("\t")
+                    time = str(table[0])
+                    uid = str(table[3])
+                    detail = str(table[12])
+                    print(re.findall(r'code.*?:(.*?),', detail, re.S))
+                    if '5' in re.findall(r'code.*?:(.*?),', detail, re.S):
                         userSend.append((time, uid, re.findall(r'text=\[(.*?)\]}', detail, re.S)[0],
                                          re.findall(r'mobile=\[(.*?)\]', detail, re.S)[0]))
 
@@ -220,10 +233,14 @@ def ssh_logger():
     return ssh
 
 
-def run(uid_mobile):
+def run(uid_mobile, log_time=None):
     s = ssh_logger()
     r = []
-    ip, uid, userSend = getUserSend(s, [uid_mobile])
+    if log_time:
+        args = [uid_mobile, '-d', log_time]
+    else:
+        args = [uid_mobile]
+    ip, uid, userSend = getUserSend(s, args)
 
     if (ip != '' and uid != ''):
         templates = getTemplates(s, ip, uid)
