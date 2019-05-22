@@ -163,13 +163,17 @@ def getUserSend(ssh, arg):
 # 获取用户的所有模板
 def getTemplates(ssh, ip, uid):
     mubanLog = getUserTplCache(ssh, ip, uid)
-    res = []
+    dome = []
+    inter = []
 
     jsonStr = "{" + (re.findall(r"{(.*?)}Stderr", str(mubanLog), re.S)[0]) + "}"
     muban = json.loads(jsonStr, encoding='utf-8')
     for d in muban['datas']:
-        res.append((d['id'], d['templateTextWithSign']))
-    return res
+        if d['inter'] is False:
+            dome.append((d['id'], d['templateTextWithSign']))
+        else:
+            inter.append((d['id'], d['templateTextWithSign']))
+    return dome, inter
 
 
 # 转码
@@ -243,9 +247,18 @@ def run(uid_mobile, log_time=None):
     ip, uid, userSend = getUserSend(s, args)
 
     if (ip != '' and uid != ''):
-        templates = getTemplates(s, ip, uid)
+        dome, inter = getTemplates(s, ip, uid)
         for time, uid, txt, mobile in userSend:
-            id, tpl = getBestTemplate(txt, templates)
+            if mobile[0] == '+' and mobile[:4] != '+861':
+                id, tpl = getBestTemplate(txt, inter)
+                tpl_type = '国际模版'
+            else:
+                id, tpl = getBestTemplate(txt, dome+inter)
+                tpl_type = '国内模版'
+                for i in inter:
+                    if id == i[0]:
+                        tpl_type = '国际模版'
+                        break
             print(tpl, txt)
             try:
                 first_tpl, second_msg = show_diff_html(tpl.splitlines(), txt.splitlines())
@@ -258,6 +271,7 @@ def run(uid_mobile, log_time=None):
                         'uid': uid,
                         'mobile': mobile,
                         'tpl_id': id,
+                        'tpl_type': tpl_type,
                         'tpl_html': first_tpl,
                         'msg_html': second_msg
                     }

@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
 	<title>FORM Text</title>
-
 	<link rel="stylesheet" id="templatecss" type="text/css" href="../static/basic.css">
+	<script>
+		function loading() {
+			button = document.getElementById('run');
+			button.innerText = '匹配中，请耐心等待';
+		}
+	</script>
 </head>
 <body>
-    <div class="loading hide">
-        <div class="gif"></div>
-    </div>
 	<form action="/" method="post" class="basic-grey">
 		<h1>模版匹配</h1>
         <p>选择发送时间: <br><input type="date" name="time" value="{{current_time}}" max="{{current_time}}" min="{{min_time}}"/>
 		<p>手机号或用户子id: <br><input type="text" name="arg" size="45"/></p>
-      <button type="submit" style="font-size: 16px" class="button" onclick="$('div.loading').show()">开始匹配</button>
+      <button id="run" type="submit" style="font-size: 16px" class="button" onclick="loading()">开始匹配</button>
 	</form>
 </body>
 </html>
